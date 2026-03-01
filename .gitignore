@@ -1,0 +1,114 @@
+# ─── Insight IS — .gitignore ───────────────────────────────────────────────────
+
+# ── Environment / Secrets ──────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+.env.production
+backend/.env
+
+# ── Python ─────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+wheels/
+pip-wheel-metadata/
+*.spec
+.installed.cfg
+lib64/
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+backend/venv/
+
+# pytest / coverage
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+
+# Alembic generated versions (optional, keep if you want version history)
+# backend/alembic/versions/
+
+# ── Logs ───────────────────────────────────────────────────────────────────────
+*.log
+logs/
+backend/logs/
+
+# ── Node.js / Frontend ─────────────────────────────────────────────────────────
+node_modules/
+frontend/node_modules/
+
+# Build output
+dist/
+frontend/dist/
+frontend/build/
+.next/
+out/
+
+# Vite cache
+.vite/
+frontend/.vite/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# npm / yarn / pnpm
+.npm
+.yarn/
+.pnp.*
+package-lock.json
+# Uncomment below if using pnpm:
+# pnpm-lock.yaml
+
+# ── IDEs and Editors ───────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*.DS_Store
+Thumbs.db
+desktop.ini
+*.sublime-project
+*.sublime-workspace
+
+# ── OS ─────────────────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ── Docker ─────────────────────────────────────────────────────────────────────
+docker-compose.override.yml
+
+# ── Misc ───────────────────────────────────────────────────────────────────────
+*.bak
+*.tmp
+*.orig
+*.rej

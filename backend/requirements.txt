@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+asyncpg
+sqlalchemy[asyncio]
+alembic
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+aiohttp
+loguru
+python-dotenv
+pydantic[email]
+websockets
+slowapi
+httpx
+apscheduler

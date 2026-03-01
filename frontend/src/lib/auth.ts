@@ -1,25 +1,39 @@
-// Утилиты для работы с авторизацией через localStorage
+/**
+ * Insight IS — Auth Utilities
+ *
+ * Работает совместно с tokenStorage из apiClient.ts.
+ * JWT хранится в localStorage под ключами insight_access_token / insight_refresh_token.
+ * Данные профиля пользователя — под ключом insight_user.
+ */
 
-export interface User {
-  email: string;
-  name?: string;
-}
+import { tokenStorage } from "./apiClient";
+import type { User as ApiUser } from "./types";
 
-export const AUTH_KEY = 'insight_user';
+export type { ApiUser as User };
 
-export const saveUser = (user: User) => {
-  localStorage.setItem(AUTH_KEY, JSON.stringify(user));
+// ── User profile ──────────────────────────────────────────────────────────────
+
+const USER_KEY = "insight_user";
+
+export const saveUser = (user: ApiUser) => {
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
 };
 
-export const getUser = (): User | null => {
-  const data = localStorage.getItem(AUTH_KEY);
+export const getUser = (): ApiUser | null => {
+  const data = localStorage.getItem(USER_KEY);
   return data ? JSON.parse(data) : null;
 };
 
 export const removeUser = () => {
-  localStorage.removeItem(AUTH_KEY);
+  localStorage.removeItem(USER_KEY);
 };
 
+// ── Auth state ────────────────────────────────────────────────────────────────
+
 export const isAuthenticated = (): boolean => {
-  return getUser() !== null;
+  return tokenStorage.getAccess() !== null;
+};
+
+export const logout = () => {
+  tokenStorage.clear();
 };

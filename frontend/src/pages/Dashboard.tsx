@@ -13,7 +13,8 @@ import { InsightDetailModal } from "@/components/InsightDetailModal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RefreshCw, Download, Bell, Plus, X, TrendingUp, TrendingDown, Minus, BarChart3, Activity } from "lucide-react";
 import { getUser, isAuthenticated } from "@/lib/auth";
-import { mockInsights, filterInsights, saveSubscription, getSubscription, Insight } from "@/lib/insights-data";
+import { filterInsights, saveSubscription, getSubscription, Insight } from "@/lib/insights-data";
+import { analysisApi } from "@/lib/api";
 import { getSources } from "@/lib/sources-data";
 import { useToast } from "@/hooks/use-toast";
 
@@ -21,7 +22,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [user, setUser] = useState(getUser());
-  const [insights, setInsights] = useState(mockInsights);
+  const [insights, setInsights] = useState<Insight[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("Все");
   const [selectedSentiment, setSelectedSentiment] = useState("Все");
   const [selectedDateRange, setSelectedDateRange] = useState("Все");
@@ -31,6 +32,32 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedInsight, setSelectedInsight] = useState<Insight | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
+
+  const fetchInsights = async () => {
+    setIsLoading(true);
+    try {
+      const data = await analysisApi.list();
+      const mappedInsights: Insight[] = data.map((item: any) => ({
+        id: String(item.id),
+        title: item.news?.title || "Без заголовка",
+        source: item.news?.source || "Неизвестно",
+        category: "Финансы",
+        sentiment: item.sentiment === 'positive' || item.sentiment === 'negative' || item.sentiment === 'neutral' ? item.sentiment : 'neutral',
+        impact: item.impact === "high" ? "Высокое" : item.impact === "medium" ? "Среднее" : "Низкое",
+        recommendation: item.summary || "",
+        date: item.created_at,
+        keywords: [],
+        content: item.news?.content || "",
+        detailedAnalysis: item.summary || ""
+      }));
+      setInsights(mappedInsights);
+    } catch (err) {
+      console.error("Failed to fetch insights", err);
+      toast({ title: "Ошибка", description: "Не удалось загрузить данные из API", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -42,19 +69,15 @@ const Dashboard = () => {
     if (subscription) {
       setEmailNotifications(true);
     }
+    fetchInsights();
   }, [navigate]);
 
   const handleRefresh = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      const shuffled = [...insights].sort(() => Math.random() - 0.5);
-      setInsights(shuffled);
-      setIsLoading(false);
-      toast({
-        title: "Инсайты обновлены",
-        description: "Лента успешно обновлена"
-      });
-    }, 1000);
+    fetchInsights();
+    toast({
+      title: "Обновление инсайтов",
+      description: "Запрашиваем свежие данные с сервера..."
+    });
   };
 
 
@@ -76,17 +99,17 @@ const Dashboard = () => {
 
   const handleExportPDF = () => {
     const filteredInsights = filterInsights(insights, selectedCategory, customKeywords);
-    const content = filteredInsights.map(insight => 
+    const content = filteredInsights.map(insight =>
       `${insight.title}\n${insight.category} | ${insight.source}\n${insight.impact}\n${insight.recommendation}\n\n`
     ).join('---\n\n');
-    
+
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `insight-report-${new Date().toISOString().split('T')[0]}.txt`;
     a.click();
-    
+
     toast({
       title: "Экспорт завершён",
       description: "Инсайты сохранены в файл"
@@ -128,7 +151,7 @@ const Dashboard = () => {
   const positivePercent = Math.round((insights.filter(i => i.sentiment === 'positive').length / totalInsights) * 100);
   const negativePercent = Math.round((insights.filter(i => i.sentiment === 'negative').length / totalInsights) * 100);
   const neutralPercent = 100 - positivePercent - negativePercent;
-  
+
   const topCompanies = [
     { name: 'Apple', count: insights.filter(i => i.keywords.some(k => k.toLowerCase().includes('apple'))).length },
     { name: 'Tesla', count: insights.filter(i => i.keywords.some(k => k.toLowerCase().includes('tesla'))).length },
@@ -140,7 +163,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      
+
       <main className="flex-1 pt-20">
         <div className="container mx-auto px-6 py-12">
           <div className="mb-8">
@@ -164,7 +187,7 @@ const Dashboard = () => {
                   </div>
                   <p className="text-3xl font-bold">{totalInsights}</p>
                 </Card>
-                
+
                 <Card className="p-6 shadow-elegant border-accent/20">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-sm text-muted-foreground">Тональность</p>
@@ -185,7 +208,7 @@ const Dashboard = () => {
                     </div>
                   </div>
                 </Card>
-                
+
                 <Card className="p-6 shadow-elegant border-accent/20">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-sm text-muted-foreground">Топ компании</p>
@@ -222,7 +245,7 @@ const Dashboard = () => {
                         ))}
                       </div>
                     </div>
-                    
+
                     <div>
                       <Label>Тональность</Label>
                       <div className="flex gap-2 mt-2 flex-wrap">
@@ -242,7 +265,7 @@ const Dashboard = () => {
                         ))}
                       </div>
                     </div>
-                    
+
                     <div>
                       <Label>Период</Label>
                       <div className="flex gap-2 mt-2 flex-wrap">
@@ -304,12 +327,12 @@ const Dashboard = () => {
               {/* Лента инсайтов */}
               <div className="space-y-4">
                 <h2 className="text-2xl font-bold">
-                  Лента инсайтов 
+                  Лента инсайтов
                   <span className="text-muted-foreground text-lg ml-2">
                     ({filteredInsights.length})
                   </span>
                 </h2>
-                
+
                 {isLoading ? (
                   <div className="grid gap-6">
                     {[1, 2, 3].map(i => (
@@ -340,9 +363,9 @@ const Dashboard = () => {
                 ) : (
                   <div className="grid gap-6">
                     {filteredInsights.map(insight => (
-                      <InsightCard 
-                        key={insight.id} 
-                        insight={insight} 
+                      <InsightCard
+                        key={insight.id}
+                        insight={insight}
                         onClick={() => handleInsightClick(insight)}
                       />
                     ))}
@@ -354,7 +377,7 @@ const Dashboard = () => {
             <TabsContent value="settings" className="space-y-6">
               <Card className="p-6 shadow-elegant border-accent/20">
                 <h2 className="text-2xl font-bold mb-6">Настройки уведомлений</h2>
-                
+
                 <div className="space-y-4">
                   <div className="flex items-center space-x-2">
                     <Checkbox
@@ -370,7 +393,7 @@ const Dashboard = () => {
                       Присылать инсайты на email
                     </label>
                   </div>
-                  
+
                   {emailNotifications && (
                     <div className="ml-6 p-4 bg-accent/10 rounded-lg border border-accent/20">
                       <p className="text-sm text-muted-foreground">
@@ -399,7 +422,7 @@ const Dashboard = () => {
 
       <Footer />
 
-      <InsightDetailModal 
+      <InsightDetailModal
         insight={selectedInsight}
         open={detailModalOpen}
         onOpenChange={setDetailModalOpen}
